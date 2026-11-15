@@ -1,0 +1,69 @@
+substitutions:
+  rx_pin: GPIO2
+  esp_name: bmswifi
+
+# ===== Hier kies je welke BMS'en worden uitgelezen =====
+# Meer BMS'en: kopieer een blok en verhoog nr en address.
+# Minder BMS'en: zet # voor de drie regels van een blok.
+packages:
+  bms0: !include { file: jk_bms.yaml, vars: { nr: 0, address: 0x00 } }
+  bms1: !include { file: jk_bms.yaml, vars: { nr: 1, address: 0x01 } }
+  bms2: !include { file: jk_bms.yaml, vars: { nr: 2, address: 0x02 } }
+  bms3: !include { file: jk_bms.yaml, vars: { nr: 3, address: 0x03 } }
+  bms4: !include { file: jk_bms.yaml, vars: { nr: 4, address: 0x04 } }
+  bms5: !include { file: jk_bms.yaml, vars: { nr: 5, address: 0x05 } }
+
+esp32:
+  variant: esp32c3
+  framework:
+    type: esp-idf
+    advanced:
+      flash_chip: generic
+
+esphome:
+  name: $esp_name
+  friendly_name: BmsWifi
+  project:
+    name: "ajvdw.esphome-jk-bms"
+    version: 1.0.0
+
+api:
+
+logger:
+  baud_rate: 0
+  level: WARN
+
+ota:
+  platform: esphome
+
+wifi:
+  ap:
+    password: !secret fallback_ap_password
+  #ssid: !secret wifi_ssid
+  #password: !secret wifi_password
+
+captive_portal:
+
+external_components:
+  source: github://ajvdw/esphome-jk-bms@main
+  refresh: 0s
+  components: [jk_rs485_sniffer, jk_rs485_bms]
+
+uart:
+  - id: uart_0
+    rx_pin: $rx_pin
+    rx_buffer_size: 384
+    baud_rate: 115200
+
+jk_rs485_sniffer:
+  - id: sniffer0
+    protocol_version: "JK02_32S"
+    rx_timeout: 500ms
+    uart_id: uart_0
+
+sensor:
+  - platform: uptime
+    name: ${esp_name} Uptime Sensor
+    id: uptime_sensor
+    update_interval: 5s
+    entity_category: diagnostic
